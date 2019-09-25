@@ -8,11 +8,13 @@ class Packet(object):
         self.time = time
 
 
-class SimData(object):
-    def __init__(self, idle_counter, rho, EN):
+class SimData_mm1k(object):
+    def __init__(self, rho, K, EN, idle_counter, loss):
         self.idle = idle_counter
         self.rho = rho
         self.EN = EN
+        self.loss = loss
+        self.K = K
 
 
 class MM1KSimulator(object):
