@@ -104,11 +104,21 @@ if __name__ == "__main__":
         llama = rho * (1000000/2000)
         sim = Simulator()
         sim.runSimulation(llama, 1000)
-        EN = sim.queue_packets/1000
+        EN = sim.queue_packets/sim.num_observers
         print(rho)
-        data = SimData(sim.idle_counter/1000, rho, EN)
+        data = SimData(sim.idle_counter/sim.num_observers, rho, EN)
         simulators.append(data)
         rho = round(rho + 0.1, 2)
+
+    #question 4
+    rho = 1.2
+    llama = rho * (1000000/2000)
+    sim = Simulator()
+    sim.runSimulation(llama, 1000)
+    EN = sim.queue_packets/sim.num_observers
+    print(rho)
+    data = SimData(sim.idle_counter/sim.num_observers, rho, EN)
+    simulators.append(data)
 
     for simulator in simulators:
         print(simulator.rho, simulator.EN, simulator.idle)
