@@ -67,9 +67,9 @@ def question6():
 
 
 if __name__ == '__main__':
-    #question1()
-    #question3()
-    #question4()
-    #question5()
+    question1()
+    question3()
+    question4()
+    question5()
     question6()
 
