@@ -16,9 +16,10 @@ def generateVariables(L, s):
     average = sum/s
     print("average: ", average, 1/L)
 
-    varianceNum = 0
-    for value in values:
-        varianceNum += (value - average)**2
-    variance = varianceNum/(s-1)
+    stdev = 0
+    for num in values:
+        stdev += (num-average)**2
+
+    variance = math.sqrt(stdev/(len(values)-1))
 
     print("variance: ", variance)
