@@ -45,26 +45,74 @@ class Persistant(object):
             transmitting_node = self.nodes[transmitting_packet.node]
             t = transmitting_packet.time
             collision_occured = False
-            for i, packet in enumerate(top_packets):
-                t_prop = 10*abs(transmitting_packet.node - packet.node)/S
-                if ((transmitting_packet.time + t_prop) > packet.time):
-                    #collision
-                    collision_occured = True
-                    colliding_node = self.nodes[packet.node]
-                    colliding_node.collisions += 1
-                    if (colliding_node.collisions > 10):
-                        #drop packet
-                        num_dropped_packets += 1
-                        packet.dropped = True
-                        colliding_node.collisions = 0
-                        top_packets.pop(i)
-                        if (len(self.nodes[packet.node].packets) > 0):
-                            newPacket = self.nodes[packet.node].packets.pop(0)
-                            if (newPacket.time < t):
-                                newPacket.time = t
-                            top_packets.append(newPacket)
-                    else:
-                        packet.time += colliding_node.getBackoff()
+            t_prop = 0
+
+            top_packets.sort(key=lambda x: x.node)
+            i = transmitting_packet.node + 1
+            j = transmitting_packet.node - 1
+            while ((i < len(top_packets) or j >= 0) and not collision_occured):
+                t_prop = 10*abs(transmitting_packet.node - max(i, j))/S
+                if (i < len(top_packets)):
+                    if ((transmitting_packet.time + t_prop) < top_packets[i].time):
+                        collision_occured = True
+                        colliding_node = self.nodes[top_packets[i].node]
+                        colliding_node.collisions += 1
+                        if (colliding_node.collisions > 10):
+                            #drop packet
+                            num_dropped_packets += 1
+                            packet.dropped = True
+                            colliding_node.collisions = 0
+                            top_packets.pop(i)
+                            if (len(colliding_node.packets) > 0):
+                                newPacket = colliding_node.packets.pop(0)
+                                if (newPacket.time < t):
+                                    newPacket.time = t
+                                top_packets.append(newPacket)
+                        else:
+                            packet.time += colliding_node.getBackoff()
+                
+                if (j >= 0 and len(top_packets) > 0):
+                    print(j)
+                    if ((transmitting_packet.time + t_prop) < top_packets[j].time):
+                        collision_occured = True
+                        colliding_node = self.nodes[top_packets[j].node]
+                        colliding_node.collisions += 1
+                        if (colliding_node.collisions > 10):
+                            #drop packet
+                            num_dropped_packets += 1
+                            packet.dropped = True
+                            colliding_node.collisions = 0
+                            top_packets.pop(j)
+                            if (len(colliding_node.packets) > 0):
+                                newPacket = colliding_node.packets.pop(0)
+                                if (newPacket.time < t):
+                                    newPacket.time = t
+                                top_packets.append(newPacket)
+                        else:
+                            packet.time += colliding_node.getBackoff()
+                i += 1
+                j -= 1 
+
+            # for i, packet in enumerate(top_packets):
+            #     t_prop = 10*abs(transmitting_packet.node - packet.node)/S
+            #     if ((transmitting_packet.time + t_prop) > packet.time):
+            #         #collision
+            #         collision_occured = True
+            #         colliding_node = self.nodes[packet.node]
+            #         colliding_node.collisions += 1
+            #         if (colliding_node.collisions > 10):
+            #             #drop packet
+            #             num_dropped_packets += 1
+            #             packet.dropped = True
+            #             colliding_node.collisions = 0
+            #             top_packets.pop(i)
+            #             if (len(self.nodes[packet.node].packets) > 0):
+            #                 newPacket = self.nodes[packet.node].packets.pop(0)
+            #                 if (newPacket.time < t):
+            #                     newPacket.time = t
+            #                 top_packets.append(newPacket)
+            #         else:
+            #             packet.time += colliding_node.getBackoff()
 
             #update transmitting node after collision
             if (collision_occured):

@@ -1,7 +1,7 @@
 from persistant import Persistant
 
 def question1():
-    A = [7, 10, 20]
+    A = [5, 12]
     N = [20, 40, 60, 80, 100]
     for n in N:
         for a in A:
