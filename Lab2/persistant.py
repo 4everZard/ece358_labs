@@ -38,14 +38,15 @@ class Persistant(object):
             packet = node.packets.pop(0)
             top_packets.append(packet)
 
-        while len(top_packets) > 0:
+        while len(top_packets) > 0 and t < T:
             top_packets.sort(key=lambda x: x.time)
             transmitting_packet = top_packets.pop(0)
             transmitting_node = self.nodes[transmitting_packet.node]
+            t = transmitting_packet.time
             collision_occured = False
             for i, packet in enumerate(top_packets):
                 t_prop = 10*abs(transmitting_packet.node - packet.node)/S
-                if ((transmitting_packet.time + t_prop) < packet.time):
+                if ((transmitting_packet.time + t_prop) > packet.time):
                     #collision
                     collision_occured = True
                     colliding_node = self.nodes[packet.node]
@@ -56,7 +57,10 @@ class Persistant(object):
                         colliding_node.collisions = 0
                         top_packets.pop(i)
                         if (len(self.nodes[packet.node].packets) > 0):
-                            top_packets.append(self.nodes[packet.node].packets.pop(0))
+                            newPacket = self.nodes[packet.node].packets.pop(0)
+                            if (newPacket.time < t):
+                                newPacket.time = t
+                            top_packets.append(newPacket)
                     else:
                         packet.time += colliding_node.getBackoff()
 
@@ -68,14 +72,16 @@ class Persistant(object):
                     transmitting_packet.dropped = True
                     transmitting_node.collisions = 0
                     if (len(transmitting_node.packets) > 0):
-                        top_packets.append(transmitting_node.packets.pop(0))
+                        newPacket = transmitting_node.packets.pop(0)
+                        if (newPacket.time < t):
+                            newPacket.time = t
+                        top_packets.append(newPacket)
                 else:
                     #readd to top nodes as failed transmission
                     transmitting_packet.time += transmitting_node.getBackoff()
                     top_packets.append(transmitting_packet)
             else:
                 #successful send
-                print(transmitting_packet.node)
                 num_successful_packets += 1
                 transmitting_node.collisions = 0
                 if len(transmitting_node.packets) > 0:
@@ -85,13 +91,18 @@ class Persistant(object):
                     if (packet.time < busy_time):
                         packet.time = busy_time
 
-                t = transmitting_packet.time + t_trans
+                t += t_trans
 
             num_transmitted_packets += 1
         print(num_transmitted_packets)
         print(num_successful_packets)
 
     def generateNodes(self, N, T, L):
+        # A = [Packet("A", 0.21, 0, 4), Packet("A", 0.26, 0, 4), Packet("A", 0.29, 0, 4), Packet("A", 0.31, 0, 4)]
+        # B = [Packet("A", 0.09, 1, 4), Packet("A", 0.1, 1, 4), Packet("A", 0.15, 1, 4), Packet("A", 0.19, 1, 4)]
+        # C = [Packet("A", 0.13, 2, 4), Packet("A", 0.16, 2, 4), Packet("A", 0.18, 2, 4), Packet("A", 0.22, 2, 4)]
+        # D = [Packet("A", 0.23, 3, 4), Packet("A", 0.27, 3, 4), Packet("A", 0.30, 3, 4), Packet("A", 0.33, 3, 4)]
+        # self.nodes = [Node(0, A), Node(1, B), Node(2, C), Node(3, D)]
         for i in range(N):
             packets = self.generatePackets(T, L, i, N)
             packets.sort(key=lambda x: x.time)
