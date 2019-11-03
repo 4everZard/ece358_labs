@@ -24,14 +24,15 @@ class Persistant(object):
     def __init__(self):
         self.nodes = []
 
-    def runSimulation(self, N, T, L):
-        self.generateNodes(N, T, L)
+    def runSimulation(self, N, T, A):
+        self.generateNodes(N, T, A)
         L = 1500
         R = 1000000
         S = (2/3) * 3 * 10**8
         t = 0
         num_transmitted_packets = 0
         num_successful_packets = 0
+        num_dropped_packets = 0
         top_packets = []
         t_trans = L/R
         for node in self.nodes:
@@ -53,6 +54,7 @@ class Persistant(object):
                     colliding_node.collisions += 1
                     if (colliding_node.collisions > 10):
                         #drop packet
+                        num_dropped_packets += 1
                         packet.dropped = True
                         colliding_node.collisions = 0
                         top_packets.pop(i)
@@ -69,6 +71,7 @@ class Persistant(object):
                 transmitting_node.collisions += 1
                 if (colliding_node.collisions > 10):
                     #drop packet
+                    num_dropped_packets += 1
                     transmitting_packet.dropped = True
                     transmitting_node.collisions = 0
                     if (len(transmitting_node.packets) > 0):
@@ -94,8 +97,10 @@ class Persistant(object):
                 t += t_trans
 
             num_transmitted_packets += 1
+        print("N: ", N, " A: ", A)
         print(num_transmitted_packets)
         print(num_successful_packets)
+        print(num_dropped_packets)
 
     def generateNodes(self, N, T, L):
         # A = [Packet("A", 0.21, 0, 4), Packet("A", 0.26, 0, 4), Packet("A", 0.29, 0, 4), Packet("A", 0.31, 0, 4)]
