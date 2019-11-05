@@ -42,7 +42,7 @@ class Persistant(object):
 
         while len(top_packets) > 0 and t < T:
             top_packets.sort(key=lambda x: x.time)
-            transmitting_packet = top_packets.pop(0)
+            transmitting_packet = top_packets[0]
             if transmitting_packet.time == T:
                 break
 
@@ -50,7 +50,7 @@ class Persistant(object):
             t = transmitting_packet.time
 
             collision_occured_i = False
-            colliding_occured_j = False
+            collision_occured_j = False
             t_prop = 0
 
             top_packets.sort(key=lambda x: x.node)
@@ -65,17 +65,16 @@ class Persistant(object):
                     if top_packets[i].time < T:
                         # Still have packets to visit on the right side
                         t_prop = 10 * abs(transmitting_packet.node - i) / S
-                        if (transmitting_packet.time + t_prop) < top_packets[i].time:
+                        if (transmitting_packet.time + t_prop) > top_packets[i].time:
                             collision_occured_i = True
                 if j >= 0:
                     if top_packets[j].time < T:
-                        print(j, len(top_packets))
                         # Still have packets to visit on the left side
                         t_prop = 10 * abs(transmitting_packet.node - j) / S
-                        if (transmitting_packet.time + t_prop) < top_packets[j].time:
+                        if (transmitting_packet.time + t_prop) > top_packets[j].time:
                             collision_occured_j = True
 
-                if collision_occured_i and colliding_occured_j:
+                if collision_occured_i and collision_occured_j:
                     collision_occured = True
                     # Both sides collided, take the first collision
                     first_collision_time = min(top_packets[i].time, top_packets[j].time)
@@ -107,7 +106,7 @@ class Persistant(object):
 
                     break
 
-                elif collision_occured_i and not colliding_occured_j:
+                elif collision_occured_i and not collision_occured_j:
                     # Collision found on the right side
                     collision_occured = True
                     colliding_node = self.nodes[top_packets[i].node]
@@ -162,6 +161,7 @@ class Persistant(object):
 
             # update transmitting node after collision
             if collision_occured:
+                num_transmitted_packets += 2
                 transmitting_node.collisions += 1
                 if colliding_node.collisions > 10:
                     # drop packet
@@ -179,9 +179,9 @@ class Persistant(object):
                 else:
                     # readd to top nodes as failed transmission
                     transmitting_packet.time += transmitting_node.getBackoff()
-                    top_packets.append(transmitting_packet)
             else:
                 # successful send
+                num_transmitted_packets += 1
                 num_successful_packets += 1
                 transmitting_node.collisions = 0
                 top_packets.pop(transmitting_node.location)
@@ -197,7 +197,7 @@ class Persistant(object):
 
                 t += t_trans
 
-            num_transmitted_packets += 1
+            
         print("N: ", N, " A: ", A)
         print(num_transmitted_packets)
         print(num_successful_packets)
