@@ -78,78 +78,74 @@ class Persistent(object):
                     # Both sides collided, take the first collision
                     first_collision_time = min(top_packets[i].time, top_packets[j].time)
                     if first_collision_time == top_packets[i].time:
-                        colliding_node = self.nodes[top_packets[i].node]
                         collision_index = i
-                        colliding_packet = top_packets[i]
                     else:
-                        colliding_node = self.nodes[top_packets[j].node]
                         collision_index = j
-                        colliding_packet = top_packets[j]
 
-                    colliding_node.collisions += 1
-                    if colliding_node.collisions > 10:
+                    self.nodes[top_packets[collision_index].node].collisions += 1
+                    if self.nodes[top_packets[collision_index].node].collisions > 10:
                         # drop packet
                         num_dropped_packets += 1
-                        colliding_node.collisions = 0
-                        top_packets.pop(collision_index)
-                        if len(colliding_node.packets) > 0:
-                            newPacket = colliding_node.packets.pop(0)
+                        self.nodes[top_packets[collision_index].node].collisions = 0
+                        if len(self.nodes[top_packets[collision_index].node].packets) > 0:
+                            newPacket = self.nodes[top_packets[collision_index].node].packets.pop(0)
                             if newPacket.time < t:
                                 newPacket.time = t
+                            top_packets.pop(collision_index)
                             top_packets.append(newPacket)
                         else:
-                            top_packets.append(Packet(packet_type=None, time=T, node=colliding_packet.node, N=N))
+                            top_packets.pop(collision_index)
+                            top_packets.append(Packet(packet_type=None, time=T, node=top_packets[collision_index].node, N=N))
 
                     else:
-                        colliding_packet.time += colliding_node.getBackoff()
+                        top_packets[collision_index].time += self.nodes[top_packets[collision_index].node].getBackoff()
                     break
 
                 elif collision_occurred_i and not collision_occurred_j:
                     # Collision found on the right side
                     collision_occurred = True
-                    colliding_node = self.nodes[top_packets[i].node]
                     collision_index = i
-                    colliding_packet = top_packets[i]
 
-                    colliding_node.collisions += 1
-                    if colliding_node.collisions > 10:
+                    self.nodes[top_packets[i].node].collisions += 1
+                    if self.nodes[top_packets[i].node].collisions > 10:
                         # drop packet
                         num_dropped_packets += 1
-                        colliding_node.collisions = 0
-                        top_packets.pop(collision_index)
-                        if len(colliding_node.packets) > 0:
-                            newPacket = colliding_node.packets.pop(0)
+                        self.nodes[top_packets[i].node].collisions = 0
+
+                        if len(self.nodes[top_packets[i].node].packets) > 0:
+                            newPacket = self.nodes[top_packets[i].node].packets.pop(0)
                             if newPacket.time < t:
                                 newPacket.time = t
+                            top_packets.pop(collision_index)
                             top_packets.append(newPacket)
                         else:
-                            top_packets.append(Packet(packet_type=None, time=T, node=colliding_packet.node, N=N))
+                            top_packets.pop(collision_index)
+                            top_packets.append(Packet(packet_type=None, time=T, node=top_packets[i].node, N=N))
                     else:
-                        colliding_packet.time += colliding_node.getBackoff()
+                        top_packets[i].time += self.nodes[top_packets[i].node].getBackoff()
                     break
 
                 elif collision_occurred_j and not collision_occurred_i:
                     # Collision found on the left side
                     collision_occurred = True
-                    colliding_node = self.nodes[top_packets[j].node]
                     collision_index = j
-                    colliding_packet = top_packets[j]
 
-                    colliding_node.collisions += 1
-                    if colliding_node.collisions > 10:
+                    self.nodes[top_packets[j].node].collisions += 1
+                    if self.nodes[top_packets[j].node].collisions > 10:
                         # drop packet
                         num_dropped_packets += 1
-                        colliding_node.collisions = 0
-                        top_packets.pop(collision_index)
-                        if len(colliding_node.packets) > 0:
-                            newPacket = colliding_node.packets.pop(0)
+                        self.nodes[top_packets[j].node].collisions = 0
+                        if len(self.nodes[top_packets[j].node].packets) > 0:
+                            newPacket = self.nodes[top_packets[j].node].packets.pop(0)
                             if newPacket.time < t:
                                 newPacket.time = t
+                            top_packets.pop(collision_index)
                             top_packets.append(newPacket)
                         else:
-                            top_packets.append(Packet(packet_type=None, time=T, node=colliding_packet.node, N=N))
+                            top_packets.pop(collision_index)
+                            top_packets.append(Packet(packet_type=None, time=T, node=top_packets[j].node, N=N))
                     else:
-                        colliding_packet.time += colliding_node.getBackoff()
+                        top_packets[j].time += self.nodes[top_packets[j].node].getBackoff()
                     break
 
                 i += 1
@@ -163,13 +159,14 @@ class Persistent(object):
                     # drop packet
                     num_dropped_packets += 1
                     transmitting_node.collisions = 0
-                    top_packets.pop(transmitting_node.location)
                     if len(transmitting_node.packets) > 0:
                         newPacket = transmitting_node.packets.pop(0)
                         if newPacket.time < t:
                             newPacket.time = t
+                        top_packets.pop(transmitting_node.location)
                         top_packets.append(newPacket)
                     else:
+                        top_packets.pop(transmitting_node.location)
                         top_packets.append(Packet(packet_type=None, time=T, node=transmitting_node.location, N=N))
 
                 else:

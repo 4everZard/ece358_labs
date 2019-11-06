@@ -2,7 +2,7 @@ from persistent import Persistent
 
 
 def question1():
-    A = [20]
+    A = [12]
     N = [20, 40, 60, 80, 100]
     for n in N:
         for a in A:
