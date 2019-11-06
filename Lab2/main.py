@@ -6,7 +6,7 @@ def question1():
     for n in N:
         for a in A:
             sim = Persistant()
-            sim.runSimulation(n, 2000, a)
+            sim.runSimulation(n, 1000, a)
 
 if __name__ == '__main__':
     question1()
