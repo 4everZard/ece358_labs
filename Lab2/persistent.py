@@ -47,6 +47,7 @@ class Persistent(object):
                 break
 
             transmitting_node = self.nodes[transmitting_packet.node]
+            transmitting_node_index = transmitting_packet.node
             t = transmitting_packet.time
 
             collision_occurred_i = False
@@ -56,7 +57,6 @@ class Persistent(object):
             i = transmitting_packet.node + 1
             j = transmitting_packet.node - 1
             collision_occurred = False
-            colliding_node = None
 
             while i < len(top_packets) or j >= 0:
 
@@ -95,7 +95,8 @@ class Persistent(object):
                             top_packets.append(newPacket)
                         else:
                             top_packets.pop(collision_index)
-                            top_packets.append(Packet(packet_type=None, time=T, node=top_packets[collision_index].node, N=N))
+                            top_packets.append(
+                                Packet(packet_type=None, time=T, node=top_packets[collision_index].node, N=N))
 
                     else:
                         top_packets[collision_index].time += self.nodes[top_packets[collision_index].node].getBackoff()
@@ -154,39 +155,43 @@ class Persistent(object):
             # update transmitting node after collision
             if collision_occurred:
                 num_transmitted_packets += 2
-                transmitting_node.collisions += 1
-                if transmitting_node.collisions > 10:
+                self.nodes[transmitting_node_index].collisions += 1
+                #transmitting_node.collisions += 1
+                if self.nodes[transmitting_node_index].collisions > 10:
                     # drop packet
                     num_dropped_packets += 1
-                    transmitting_node.collisions = 0
-                    if len(transmitting_node.packets) > 0:
-                        newPacket = transmitting_node.packets.pop(0)
+                    self.nodes[transmitting_node_index].collisions = 0
+                    if len(self.nodes[transmitting_node_index].packets) > 0:
+                        newPacket = self.nodes[transmitting_node_index].packets.pop(0)
                         if newPacket.time < t:
                             newPacket.time = t
-                        top_packets.pop(transmitting_node.location)
+                        top_packets.pop(self.nodes[transmitting_node_index].location)
                         top_packets.append(newPacket)
                     else:
-                        top_packets.pop(transmitting_node.location)
-                        top_packets.append(Packet(packet_type=None, time=T, node=transmitting_node.location, N=N))
+                        top_packets.pop(self.nodes[transmitting_node_index].location)
+                        top_packets.append(Packet(packet_type=None, time=T, node=self.nodes[transmitting_node_index].location, N=N))
 
                 else:
                     # read to top nodes as failed transmission
-                    transmitting_packet.time += transmitting_node.getBackoff()
+                    top_packets[transmitting_node_index].time += transmitting_node.getBackoff()
             else:
                 # successful send
                 num_transmitted_packets += 1
                 num_successful_packets += 1
-                transmitting_node.collisions = 0
-                top_packets.pop(transmitting_node.location)
-                if len(transmitting_node.packets) > 0:
-                    top_packets.append(transmitting_node.packets.pop(0))
+                self.nodes[transmitting_node_index].collisions = 0
+                top_packets.pop(self.nodes[transmitting_node_index].location)
+                if len(self.nodes[transmitting_node_index].packets) > 0:
+                    top_packets.append(self.nodes[transmitting_node_index].packets.pop(0))
                 else:
-                    top_packets.append(Packet(packet_type=None, time=T, node=transmitting_node.location, N=N))
-                for packet in top_packets:
+                    top_packets.append(Packet(packet_type=None, time=T, node=self.nodes[transmitting_node_index].location, N=N))
+
+                k = 0
+                while k < len(top_packets):
                     busy_time = transmitting_packet.time + t_trans + 10 * abs(
                         transmitting_packet.node - packet.node) / S
-                    if packet.time < busy_time:
-                        packet.time = busy_time
+                    if top_packets[k].time < busy_time:
+                        top_packets[k].time = busy_time
+                    k += 1
 
                 t += t_trans
 
