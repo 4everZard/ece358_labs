@@ -159,7 +159,7 @@ class Persistent(object):
             if collision_occurred:
                 num_transmitted_packets += 2
                 transmitting_node.collisions += 1
-                if colliding_node.collisions > 10:
+                if transmitting_node.collisions > 10:
                     # drop packet
                     num_dropped_packets += 1
                     transmitting_node.collisions = 0
@@ -173,7 +173,7 @@ class Persistent(object):
                         top_packets.append(Packet(packet_type=None, time=T, node=transmitting_node.location, N=N))
 
                 else:
-                    # readd to top nodes as failed transmission
+                    # read to top nodes as failed transmission
                     transmitting_packet.time += transmitting_node.getBackoff()
             else:
                 # successful send
