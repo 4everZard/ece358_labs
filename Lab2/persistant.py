@@ -190,8 +190,7 @@ class Persistant(object):
                 else:
                     top_packets.append(Packet(packet_type=None, time=T, node=transmitting_node.location, N=N))
                 for packet in top_packets:
-                    busy_time = transmitting_packet.time + t_trans + 10 * abs(
-                        transmitting_packet.node - packet.node) / S
+                    busy_time = transmitting_packet.time + t_trans + 10 * abs(transmitting_packet.node - packet.node) / S
                     if packet.time < busy_time:
                         packet.time = busy_time
 
@@ -199,9 +198,9 @@ class Persistant(object):
 
             
         print("N: ", N, " A: ", A)
-        print(num_transmitted_packets)
-        print(num_successful_packets)
-        print(num_dropped_packets)
+        print("Total:", num_transmitted_packets)
+        print("Success:", num_successful_packets)
+        print("Efficiency:", num_successful_packets/num_transmitted_packets)
 
     def generateNodes(self, N, T, L):
         # A = [Packet("A", 0.21, 0, 4), Packet("A", 0.26, 0, 4), Packet("A", 0.29, 0, 4), Packet("A", 0.31, 0, 4)]
