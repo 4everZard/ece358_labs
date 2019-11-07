@@ -3,6 +3,9 @@ import random
 
 
 class Packet(object):
+    """
+    Packet Object with reference to which node the packet originated from
+    """
     def __init__(self, packet_type, time, node, N):
         self.type = packet_type
         self.time = time
@@ -10,12 +13,19 @@ class Packet(object):
 
 
 class Node(object):
+    """
+    Node Object representing a network device.
+    """
     def __init__(self, node_location, packets):
         self.location = node_location
         self.packets = packets
         self.collisions = 0
 
     def getBackoff(self):
+        """
+        Returns an exponential backoff time for use when a collision occurs
+        :return: backoff
+        """
         R = random.random() * ((2 ** self.collisions) - 1)
         backoff = R * (1 / 1000000)
         return backoff
@@ -26,6 +36,24 @@ class Persistent(object):
         self.nodes = []
 
     def runSimulation(self, N, T, A):
+        """
+        The simulation creates a bunch of nodes each with their own list
+        of arrival packets, sorted by increasing arrival time.
+        It then processes each arrival packet and handles any collisions.
+        Packets that collide more than ten times are dropped.
+        Metrics are collected including total packets transmitted,
+        total successful packet transmissions and total number of dropped
+        packets.
+
+        In persistent mode, if a node detects a busy medium, it simply updates
+        its time to the moment that the transmitting packet departs and then it tries
+        to send again (polling)
+
+        :param N: Number of Nodes to Simulate
+        :param T: Simulation Time
+        :param A: Average Packet Arrival Rate
+        :return: None
+        """
         self.generateNodes(N, T, A)
         L = 1500
         R = 1000000
@@ -42,6 +70,7 @@ class Persistent(object):
 
         while t < T:
             top_packets.sort(key=lambda x: x.time)
+            # The transmitting packet is the one with the earliest arrival time
             transmitting_packet = top_packets[0]
             if transmitting_packet.time == T:
                 break
@@ -53,29 +82,33 @@ class Persistent(object):
             collision_occurred_i = False
             collision_occurred_j = False
 
+            # Sorting packets by node index to easily calculate propagation time for adjacent nodes
             top_packets.sort(key=lambda x: x.node)
             i = transmitting_packet.node + 1
             j = transmitting_packet.node - 1
             collision_occurred = False
 
             while i < len(top_packets) or j >= 0:
+                # This while loop checks all adjacent nodes of the transmitting node
+                # and determines if a collision has occurred.
+                # In the event that a collision occurs, the colliding packet is handled.
 
                 if i < len(top_packets):
                     if top_packets[i].time < T:
-                        # Still have packets to visit on the right side
+                        # Still have nodes to check on the right side of the transmitting node
                         t_prop = 10 * abs(transmitting_packet.node - i) / S
                         if (transmitting_packet.time + t_prop) > top_packets[i].time:
                             collision_occurred_i = True
                 if j >= 0:
                     if top_packets[j].time < T:
-                        # Still have packets to visit on the left side
+                        # Still have nodes to check on the left side of the transmitting node
                         t_prop = 10 * abs(transmitting_packet.node - j) / S
                         if (transmitting_packet.time + t_prop) > top_packets[j].time:
                             collision_occurred_j = True
 
+                # Multiple collisions detected, take the one that collided first and treat the other as a non-collision
                 if collision_occurred_i and collision_occurred_j:
                     collision_occurred = True
-                    # Both sides collided, take the first collision
                     first_collision_time = min(top_packets[i].time, top_packets[j].time)
                     if first_collision_time == top_packets[i].time:
                         collision_index = i
@@ -84,7 +117,7 @@ class Persistent(object):
 
                     self.nodes[top_packets[collision_index].node].collisions += 1
                     if self.nodes[top_packets[collision_index].node].collisions > 10:
-                        # drop packet
+                        # Drop the packet if it tried to transmit over ten times.
                         num_dropped_packets += 1
                         self.nodes[top_packets[collision_index].node].collisions = 0
                         if len(self.nodes[top_packets[collision_index].node].packets) > 0:
@@ -102,17 +135,16 @@ class Persistent(object):
                         top_packets[collision_index].time += self.nodes[top_packets[collision_index].node].getBackoff()
                     break
 
+                # Collision detected on a right adjacent node. Need to handle the colliding packet.
                 elif collision_occurred_i and not collision_occurred_j:
-                    # Collision found on the right side
                     collision_occurred = True
                     collision_index = i
 
                     self.nodes[top_packets[i].node].collisions += 1
                     if self.nodes[top_packets[i].node].collisions > 10:
-                        # drop packet
+                        # Drop the packet if it tried to transmit over ten times.
                         num_dropped_packets += 1
                         self.nodes[top_packets[i].node].collisions = 0
-
                         if len(self.nodes[top_packets[i].node].packets) > 0:
                             newPacket = self.nodes[top_packets[i].node].packets.pop(0)
                             if newPacket.time < t:
@@ -126,14 +158,14 @@ class Persistent(object):
                         top_packets[i].time += self.nodes[top_packets[i].node].getBackoff()
                     break
 
+                # Collision detected on a left adjacent node. Need to handle the colliding packet.
                 elif collision_occurred_j and not collision_occurred_i:
-                    # Collision found on the left side
                     collision_occurred = True
                     collision_index = j
 
                     self.nodes[top_packets[j].node].collisions += 1
                     if self.nodes[top_packets[j].node].collisions > 10:
-                        # drop packet
+                        # Drop the packet if it tried to transmit over ten times.
                         num_dropped_packets += 1
                         self.nodes[top_packets[j].node].collisions = 0
                         if len(self.nodes[top_packets[j].node].packets) > 0:
@@ -152,13 +184,13 @@ class Persistent(object):
                 i += 1
                 j -= 1
 
-            # update transmitting node after collision
+            # If a collision was detected, we need to handle the transmitting node, which was apart of the collision.
             if collision_occurred:
+                # Increment the number of transmitted packets by two since two packets collided.
                 num_transmitted_packets += 2
                 self.nodes[transmitting_node_index].collisions += 1
-                #transmitting_node.collisions += 1
                 if self.nodes[transmitting_node_index].collisions > 10:
-                    # drop packet
+                    # Drop the packet if it tried to transmit over ten times.
                     num_dropped_packets += 1
                     self.nodes[transmitting_node_index].collisions = 0
                     if len(self.nodes[transmitting_node_index].packets) > 0:
@@ -175,7 +207,7 @@ class Persistent(object):
                     # read to top nodes as failed transmission
                     top_packets[transmitting_node_index].time += transmitting_node.getBackoff()
             else:
-                # successful send
+                # Transmission was successful
                 num_transmitted_packets += 1
                 num_successful_packets += 1
                 self.nodes[transmitting_node_index].collisions = 0
@@ -187,6 +219,7 @@ class Persistent(object):
 
                 k = 0
                 while k < len(top_packets):
+                    # Update the packets in the top queue to the time after the transmitting packet 
                     busy_time = transmitting_packet.time + t_trans + 10 * abs(
                         transmitting_packet.node - packet.node) / S
                     if top_packets[k].time < busy_time:
@@ -201,6 +234,12 @@ class Persistent(object):
         print("Efficiency:", num_successful_packets / num_transmitted_packets)
 
     def generateNodes(self, N, T, L):
+        """
+        :param N: Number of Nodes to Generate
+        :param T: Simulation Time
+        :param L: Packet Length
+        :return: None
+        """
         for i in range(N):
             packets = self.generatePackets(T, L, i, N)
             packets.sort(key=lambda x: x.time)

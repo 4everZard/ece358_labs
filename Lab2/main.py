@@ -10,6 +10,7 @@ def question1():
             sim = Persistent()
             sim.runSimulation(n, 1000, a)
 
+
 def question2():
     A = [7, 10, 20]
     N = [20, 40, 60, 80, 100]
